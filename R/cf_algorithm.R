@@ -155,36 +155,37 @@ predict_cf <- function(ratings_matrix, predictions_indices, alg_method, normaliz
   num_row_splits <- ceiling(nrow(ratings_matrix)/rowchunk_size)
   num_column_splits <- ceiling(ncol(ratings_matrix)/columnchunk_size) 
   
-  for(i in 1:num_row_splits){
+  # Iterate over columns first, so that each chunk of similarities is calcualated only once.
+  for(i in 1:num_column_splits){
     
-    start_row <- rowchunk_size * (i-1) + 1 # Start row for the current chunk.
-    end_row <- rowchunk_size * i # End row for the current chunk.
-    if(nrow(ratings_matrix) < end_row){
-      end_row <- nrow(ratings_matrix)
+    start_column <- columnchunk_size * (i-1) + 1 # Start column for the current chunk.
+    end_column <- columnchunk_size * i # End column for the current chunk.
+    if(ncol(ratings_matrix) < end_column){
+      end_column <- ncol(ratings_matrix)
     }
     
-    rows_to_consider <- intersect(start_row:end_row, predictions_indices[, 1])
-    if(length(rows_to_consider) == 0) next
+    columns_to_consider <- intersect(start_column:end_column, predictions_indices[, 2])
+    if(length(columns_to_consider) == 0) next
     
-    for(j in 1:num_column_splits){
+    # Set names of rows and columns to be numbers (indices). 
+    # This way similarities and part_predictions, calculated in next steps, will use these names.
+    ratings_matrix@Dimnames[[1]] <- as.character(1:nrow(ratings_matrix))
+    ratings_matrix@Dimnames[[2]] <- as.character(1:ncol(ratings_matrix))
+    
+    similarities <- find_similarities(ratings_matrix, columns_to_consider, similarity_metric, make_positive_similarities, k)
+    
+    for(j in 1:num_row_splits){
       
-      start_column <- columnchunk_size * (j-1) + 1 # Start column for the current chunk.
-      end_column <- columnchunk_size * j # End column for the current chunk.
-      if(ncol(ratings_matrix) < end_column){
-        end_column <- ncol(ratings_matrix)
+      start_row <- rowchunk_size * (j-1) + 1 # Start row for the current chunk.
+      end_row <- rowchunk_size * j # End row for the current chunk.
+      if(nrow(ratings_matrix) < end_row){
+        end_row <- nrow(ratings_matrix)
       }
       
-      columns_to_consider <- intersect(start_column:end_column, predictions_indices[, 2])
-      if(length(columns_to_consider) == 0) next
+      rows_to_consider <- intersect(start_row:end_row, predictions_indices[, 1])
+      if(length(rows_to_consider) == 0) next
       
       # print(paste("Current chunk: ", start_row, end_row, start_column, end_column, sep = ","))
-      
-      # Set names of rows and columns to be numbers (indices). 
-      # This way similarities and part_predictions, calculated in next steps, will use these names.
-      ratings_matrix@Dimnames[[1]] <- as.character(1:nrow(ratings_matrix))
-      ratings_matrix@Dimnames[[2]] <- as.character(1:ncol(ratings_matrix))
-      
-      similarities <- find_similarities(ratings_matrix, columns_to_consider, similarity_metric, make_positive_similarities, k)
       part_predictions <- calculate_predictions(ratings_matrix[rows_to_consider, , drop = FALSE], similarities) # drop = FALSE because of the case when we have only one row, make it dgCMatrix.
       
       # Fill predictions matrix with predictions calculated in this iteration.
