@@ -7,14 +7,15 @@
 #' @param X (dgCMatrix)
 #' @param Y (dgCMatrix)
 #' @returns Matrix of correlations.
+#' @note Requeres {recommenderlab} package for normalization.
 cal_cor <- function(X, Y){
 
   availX <- X!=0
   availY <- Y!=0
   
-  # TODO: to optimize further
-  X<- t(as(t(X) - colMeans(X), "dgCMatrix"))
-  Y<- t(as(t(Y) - colMeans(Y), "dgCMatrix"))
+  # normalization
+  X<- as(normalize(as(X, "realRatingMatrix"), method = "center", row = FALSE), "dgCMatrix")
+  Y<- as(normalize(as(Y, "realRatingMatrix"), method = "center", row = FALSE), "dgCMatrix")
 
   R <- crossprod(X,Y)
   N <- crossprod(X^2, availY)
