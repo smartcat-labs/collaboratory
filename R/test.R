@@ -40,7 +40,7 @@ evaluate_cf <- function(ratings_matrix, number_of_folds, ...) {
     train_matrix[test_subset] <- 0
     train_matrix <- drop0(train_matrix)
     
-    predictions_matrix <- predict_cf(train_matrix, test_subset, ...)
+    predictions_matrix <- predict_nm(train_matrix, test_subset, ...)
     all_predictions[as.matrix(test_subset)] <- predictions_matrix[as.matrix(test_subset)]
   }
   # Predictions may fall out of the required interval (for example [1, 5] if ratings are from that interval).
@@ -78,7 +78,7 @@ users <- c(5, 10, 30)
 prediction_indices <- as.matrix(expand.grid(items_to_predict, users))
 # note that predictions may fall out of the required interval (for example [1, 5])
 Sys.time()
-res <- predict_cf(ratings_matrix, prediction_indices, "ubcf", TRUE, cal_cos, 300, FALSE, 2000, 1000)
+res <- predict_nm(ratings_matrix, prediction_indices, "ubcf", TRUE, cal_cos, 300, FALSE, 2000, 1000)
 Sys.time()
 
 
